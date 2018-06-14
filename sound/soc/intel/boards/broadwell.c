@@ -72,8 +72,8 @@ static const struct snd_soc_dapm_route broadwell_rt286_map[] = {
 	{"DMIC2 Pin", NULL, "DMIC2"},
 
 	/* CODEC BE connections */
-	{"SSP0 CODEC IN", NULL, "AIF1 Capture"},
-	{"AIF1 Playback", NULL, "SSP0 CODEC OUT"},
+	{"SSP0.IN", NULL, "AIF1 Capture"},
+	{"AIF1 Playback", NULL, "SSP0.OUT"},
 };
 
 static int broadwell_rt286_codec_init(struct snd_soc_pcm_runtime *rtd)
@@ -153,6 +153,7 @@ static int broadwell_rtd_init(struct snd_soc_pcm_runtime *rtd)
 
 /* broadwell digital audio interface glue - connects codec <--> CPU */
 static struct snd_soc_dai_link broadwell_rt286_dais[] = {
+#if 0
 	/* Front End DAI links */
 	{
 		.name = "System PCM",
@@ -202,13 +203,13 @@ static struct snd_soc_dai_link broadwell_rt286_dais[] = {
 		.trigger = {SND_SOC_DPCM_TRIGGER_POST, SND_SOC_DPCM_TRIGGER_POST},
 		.dpcm_capture = 1,
 	},
+#endif
 	/* Back End DAI links */
 	{
 		/* SSP0 - Codec */
 		.name = "Codec",
 		.id = 0,
-		.cpu_dai_name = "snd-soc-dummy-dai",
-		.platform_name = "snd-soc-dummy",
+		.cpu_dai_name = "SSP0 Pin",
 		.no_pcm = 1,
 		.codec_name = "i2c-INT343A:00",
 		.codec_dai_name = "rt286-aif1",

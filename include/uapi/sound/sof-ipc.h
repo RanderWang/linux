@@ -459,6 +459,8 @@ struct sof_ipc_stream_params {
 	/* for notifying host period has completed - 0 means no period IRQ */
 	uint32_t host_period_bytes;
 	enum sof_ipc_chmap chmap[SOF_IPC_MAX_CHANNELS];	/* channel map */
+	uint32_t host_dma_ch;
+	uint32_t link_dma_ch;
 } __attribute__((packed));
 
 /* PCM params info - SOF_IPC_STREAM_PCM_PARAMS */

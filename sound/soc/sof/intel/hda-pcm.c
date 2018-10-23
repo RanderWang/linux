@@ -95,6 +95,37 @@ static inline u32 get_bits(struct snd_sof_dev *sdev, int sample_bits)
 	}
 };
 
+static inline int get_link_dma_channel(struct snd_sof_dev *sdev,
+				       struct snd_pcm_substream *substream,
+				       struct sof_ipc_stream_params *ipc_params)
+{
+	struct snd_soc_pcm_runtime *fe = substream->private_data;
+	struct snd_soc_dai *cpu_dai = fe->cpu_dai;
+	struct hdac_ext_stream *be_stream;
+
+	be_stream = snd_soc_dai_get_dma_data(cpu_dai, substream);
+	if (be_stream) {
+		/* Host dma and link dma work in decouple mode for SOF+HDA
+		 * The host dma is set by dai frontend and link dma is set by
+		 * dai backend. Now get link dma channel from BE stream
+		 */
+		ipc_params->link_dma_ch = be_stream->hstream.stream_tag - 1;
+	} else {
+		/* the setting of link dma is same as host dma in default */
+		ipc_params->link_dma_ch = ipc_params->host_dma_ch;
+	}
+
+	if (ipc_params->link_dma_ch >= SOF_HDA_CAPTURE_STREAMS ||
+	    ipc_params->link_dma_ch >= SOF_HDA_PLAYBACK_STREAMS) {
+		dev_err(sdev->dev, "error: link dma channel:%d is out of range\n",
+			ipc_params->link_dma_ch);
+
+		return -EIO;
+	}
+
+	return 0;
+}
+
 int hda_dsp_pcm_hw_params(struct snd_sof_dev *sdev,
 			  struct snd_pcm_substream *substream,
 			  struct snd_pcm_hw_params *params,
@@ -135,6 +166,15 @@ int hda_dsp_pcm_hw_params(struct snd_sof_dev *sdev,
 		ipc_params->host_period_bytes = 0;
 
 	ipc_params->stream_tag = hstream->stream_tag;
+
+	/* stream_tag increases from one while zero for dma channel index */
+	ipc_params->host_dma_ch = hstream->stream_tag - 1;
+
+	ret = get_link_dma_channel(sdev, substream, ipc_params);
+	if (ret < 0) {
+		dev_err(sdev->dev, "error: failed to get link dma channel\n");
+		return -EIO;
+	}
 
 	return 0;
 }

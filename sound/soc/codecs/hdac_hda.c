@@ -161,14 +161,19 @@ static int hdac_hda_dai_hw_free(struct snd_pcm_substream *substream,
 static int hdac_hda_dai_prepare(struct snd_pcm_substream *substream,
 				struct snd_soc_dai *dai)
 {
+	struct snd_soc_pcm_runtime *rtd = substream->private_data;
 	struct snd_soc_component *component = dai->component;
-	struct hdac_hda_priv *hda_pvt;
 	struct snd_pcm_runtime *runtime = substream->runtime;
-	struct hdac_device *hdev;
 	struct hda_pcm_stream *hda_stream;
+	struct hdac_hda_priv *hda_pvt;
+	struct snd_soc_dpcm *dpcm;
+	struct hdac_device *hdev;
 	unsigned int format_val;
 	struct hda_pcm *pcm;
 	unsigned int stream;
+	int channels = 0;
+	int format = 0;
+	int rate = 0;
 	int ret = 0;
 
 	hda_pvt = snd_soc_component_get_drvdata(component);
@@ -179,15 +184,38 @@ static int hdac_hda_dai_prepare(struct snd_pcm_substream *substream,
 
 	hda_stream = &pcm->stream[substream->stream];
 
-	format_val = snd_hdac_calc_stream_format(runtime->rate,
-						 runtime->channels,
-						 runtime->format,
+	/*
+	 * get format information from hw_params if this
+	 * dai is managed by dpcm because hw_params
+	 * would be changed by hw_params_fixup in dpcm
+	 */
+	if (rtd->dpcm[substream->stream].state ==
+			SND_SOC_DPCM_STATE_HW_PARAMS) {
+		for_each_dpcm_fe(rtd, substream->stream, dpcm) {
+			if (dpcm->be->codec_dai == dai) {
+				rate = params_rate(&dpcm->hw_params);
+				format = params_format(&dpcm->hw_params);
+				channels = params_channels(&dpcm->hw_params);
+
+				break;
+			}
+		}
+	} else {
+		rate = runtime->rate;
+		format = runtime->format;
+		channels = runtime->channels;
+	}
+
+	format_val = snd_hdac_calc_stream_format(rate,
+						 channels,
+						 format,
 						 hda_stream->maxbps,
 						 0);
+
 	if (!format_val) {
 		dev_err(&hdev->dev,
 			"invalid format_val, rate=%d, ch=%d, format=%d\n",
-			runtime->rate, runtime->channels, runtime->format);
+			rate, channels, format);
 		return -EINVAL;
 	}
 

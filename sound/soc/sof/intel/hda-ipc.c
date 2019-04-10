@@ -75,6 +75,11 @@ void hda_dsp_ipc_get_reply(struct snd_sof_dev *sdev)
 	unsigned long flags;
 	int ret = 0;
 
+	if (!msg) {
+		dev_warn(sdev->dev, "suspicious interrupt raised!\n");
+		return;
+	}
+
 	spin_lock_irqsave(&sdev->ipc_lock, flags);
 
 	hdr = msg->msg_data;

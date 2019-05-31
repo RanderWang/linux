@@ -17,6 +17,7 @@
 #include <sound/hda_codec.h>
 #include <sound/hda_register.h>
 #include "hdac_hda.h"
+#include "../../pci/hda/hda_jack.h"
 
 #define HDAC_ANALOG_DAI_ID		0
 #define HDAC_DIGITAL_DAI_ID		1
@@ -302,6 +303,25 @@ static struct hda_pcm *snd_soc_find_pcm_from_dai(struct hdac_hda_priv *hda_pvt,
 	return NULL;
 }
 
+static struct delayed_work jackpoll_work;
+static struct hda_codec *codec;
+static void hdac_hda_jackpoll_work(struct work_struct *work)
+{
+	snd_hda_jack_set_dirty_all(codec);
+	snd_hda_jack_poll_all(codec);
+
+	schedule_delayed_work(&jackpoll_work,
+			      msecs_to_jiffies(500));
+}
+
+void hdac_hda_codec_jack_work(struct hda_codec *hcodec)
+{
+	codec = hcodec;
+	INIT_DELAYED_WORK(&jackpoll_work, hdac_hda_jackpoll_work);
+	schedule_delayed_work(&jackpoll_work,
+			      msecs_to_jiffies(500));
+}
+
 static int hdac_hda_codec_probe(struct snd_soc_component *component)
 {
 	struct hdac_hda_priv *hda_pvt =
@@ -380,6 +400,8 @@ static int hdac_hda_codec_probe(struct snd_soc_component *component)
 
 	hcodec->core.lazy_cache = true;
 
+	hdac_hda_codec_jack_work(hcodec);
+
 	/*
 	 * hdac_device core already sets the state to active and calls
 	 * get_noresume. So enable runtime and set the device to suspend.
@@ -402,6 +424,7 @@ static void hdac_hda_codec_remove(struct snd_soc_component *component)
 	struct hdac_hda_priv *hda_pvt =
 		      snd_soc_component_get_drvdata(component);
 	struct hdac_device *hdev = &hda_pvt->codec.core;
+	struct hda_codec *hcodec = &hda_pvt->codec;
 	struct hdac_ext_link *hlink = NULL;
 
 	hlink = snd_hdac_ext_bus_get_link(hdev->bus, dev_name(&hdev->dev));
@@ -412,6 +435,8 @@ static void hdac_hda_codec_remove(struct snd_soc_component *component)
 
 	snd_hdac_ext_bus_link_put(hdev->bus, hlink);
 	pm_runtime_disable(&hdev->dev);
+
+	cancel_delayed_work_sync(&hcodec->jackpoll_work);
 }
 
 static const struct snd_soc_dapm_route hdac_hda_dapm_routes[] = {

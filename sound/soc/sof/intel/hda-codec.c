@@ -115,7 +115,7 @@ int hda_codec_probe_bus(struct snd_sof_dev *sdev)
 	}
 
 	/* set autosuspend delay for hda bus device */
-	snd_hda_set_power_save(hbus, SND_SOF_SUSPEND_DELAY_MS);
+	snd_hda_set_power_save(hbus, 200);
 
 	return 0;
 }

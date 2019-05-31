@@ -391,6 +391,12 @@ int snd_sof_runtime_resume(struct device *dev)
 }
 EXPORT_SYMBOL(snd_sof_runtime_resume);
 
+int snd_sof_runtime_idle(struct device *dev)
+{
+	return snd_sof_dsp_runtime_idle(dev_get_drvdata(dev));
+}
+EXPORT_SYMBOL(snd_sof_runtime_idle);
+
 int snd_sof_resume(struct device *dev)
 {
 	return sof_resume(dev, false);

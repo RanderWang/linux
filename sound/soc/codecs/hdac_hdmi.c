@@ -2048,7 +2048,9 @@ static int hdac_hdmi_dev_probe(struct hdac_device *hdev)
 	ret = devm_snd_soc_register_component(&hdev->dev, &hdmi_hda_codec,
 					hdmi_dais, num_dais);
 
+#ifdef ENABLE_RUNTIME_PM
 	snd_hdac_ext_bus_link_put(hdev->bus, hlink);
+#endif
 
 	return ret;
 }

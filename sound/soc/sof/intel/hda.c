@@ -17,6 +17,7 @@
 
 #include <linux/module.h>
 #include <sound/hdaudio_ext.h>
+#include <sound/hda_register.h>
 #include <sound/sof.h>
 #include <sound/sof/xtensa.h>
 #include "../ops.h"
@@ -572,6 +573,8 @@ int hda_dsp_probe(struct snd_sof_dev *sdev)
 		dev_err(sdev->dev, "error: failed to exit HDA controller reset\n");
 		goto free_ipc_irq;
 	}
+
+	snd_hdac_chip_updatel(bus, GCTL, AZX_GCTL_UNSOL, AZX_GCTL_UNSOL);
 
 	/* clear stream status */
 	list_for_each_entry(stream, &bus->stream_list, list) {

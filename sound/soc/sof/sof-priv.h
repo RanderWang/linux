@@ -376,6 +376,7 @@ struct snd_sof_dev {
 	struct snd_sof_mailbox stream_box;	/* Stream position update */
 	struct snd_sof_ipc_msg *msg;
 	int ipc_irq;
+	int ipc_enabled;
 	u32 next_comp_id; /* monotonic - reset during S3 */
 
 	/* memory bases for mmaped DSPs - set by dsp_init() */

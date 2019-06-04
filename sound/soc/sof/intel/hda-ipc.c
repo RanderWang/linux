@@ -247,6 +247,9 @@ irqreturn_t hda_dsp_ipc_irq_handler(int irq, void *context)
 
 	spin_lock(&sdev->hw_lock);
 
+	if (!sdev->ipc_enabled)
+		goto out;
+
 	/* store status */
 	irq_status = snd_sof_dsp_read(sdev, HDA_DSP_BAR, HDA_DSP_REG_ADSPIS);
 	dev_vdbg(sdev->dev, "irq handler: irq_status:0x%x\n", irq_status);

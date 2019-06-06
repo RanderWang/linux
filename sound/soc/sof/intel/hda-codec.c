@@ -41,33 +41,33 @@ static void hda_codec_load_module(struct hda_codec *codec) {}
 /* check jack status after resuming from suspend mode */
 void hda_codec_jack_check(struct snd_sof_dev *sdev, int status)
 {
+	struct sof_intel_hda_dev *hda = sdev->pdata->hw_pdata;
 	struct hda_bus *hbus = sof_to_hbus(sdev);
 	struct hdac_bus *bus = sof_to_bus(sdev);
 	struct hda_codec *codec;
+	int mask;
 
-	if (!status)
-		goto disable;
+	mask = status ? status : hda->hda_codec_mask;
 
 	list_for_each_codec(codec, hbus)
-		if (status & (1 << codec->core.addr))
+		if (mask & BIT(codec->core.addr))
 			schedule_delayed_work(&codec->jackpoll_work,
 					      codec->jackpoll_interval);
 
-disable:
 	/* disable controller Wake Up event*/
 	snd_hdac_chip_writew(bus, WAKEEN,
 			     snd_hdac_chip_readw(bus, WAKEEN) &
 			     ~STATESTS_INT_MASK);
 }
-EXPORT_SYMBOL(hda_codec_jack_check);
 #else
 void hda_codec_jack_check(struct snd_sof_dev *sdev, int status) {}
-EXPORT_SYMBOL(hda_codec_jack_check);
 #endif /* CONFIG_SND_SOC_SOF_HDA_AUDIO_CODEC */
+EXPORT_SYMBOL(hda_codec_jack_check);
 
 /* probe individual codec */
 static int hda_codec_probe(struct snd_sof_dev *sdev, int address)
 {
+	struct sof_intel_hda_dev *hda = sdev->pdata->hw_pdata;
 	struct hda_bus *hbus = sof_to_hbus(sdev);
 	struct hdac_device *hdev;
 #if IS_ENABLED(CONFIG_SND_SOC_SOF_HDA_AUDIO_CODEC)
@@ -103,6 +103,7 @@ static int hda_codec_probe(struct snd_sof_dev *sdev, int address)
 	/* use legacy bus only for HDA codecs, idisp uses ext bus */
 	if ((resp & 0xFFFF0000) != IDISP_VID_INTEL) {
 		hdev->type = HDA_DEV_LEGACY;
+		hda->hda_codec_mask |= BIT(address);
 		hda_codec_load_module(&hda_priv->codec);
 	}
 

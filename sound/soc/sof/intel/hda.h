@@ -372,6 +372,8 @@ struct sof_intel_hda_dev {
 
 	int irq;
 
+	u32 hda_codec_mask;
+
 	/* DMIC device */
 	struct platform_device *dmic_dev;
 };

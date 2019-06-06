@@ -356,7 +356,7 @@ static int hda_resume(struct snd_sof_dev *sdev, bool runtime_resume)
 #if IS_ENABLED(CONFIG_SND_SOC_SOF_HDA)
 	struct hdac_bus *bus = sof_to_bus(sdev);
 	struct hdac_ext_link *hlink = NULL;
-	int status;
+	int status = 0;
 #endif
 	int ret;
 

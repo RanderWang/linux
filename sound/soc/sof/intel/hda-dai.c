@@ -210,9 +210,13 @@ static int hda_link_hw_params(struct snd_pcm_substream *substream,
 	int stream_tag;
 	int ret;
 
-	link_dev = hda_link_stream_assign(bus, substream);
-	if (!link_dev)
-		return -EBUSY;
+	/* get stored dma data if resuming from system suspend */
+	link_dev = snd_soc_dai_get_dma_data(dai, substream);
+	if (!link_dev) {
+		link_dev = hda_link_stream_assign(bus, substream);
+		if (!link_dev)
+			return -EBUSY;
+	}
 
 	stream_tag = hdac_stream(link_dev)->stream_tag;
 
@@ -372,6 +376,7 @@ static int hda_link_hw_free(struct snd_pcm_substream *substream,
 	stream_tag = hdac_stream(link_dev)->stream_tag;
 	snd_hdac_ext_link_clear_stream_id(link, stream_tag);
 	snd_hdac_ext_stream_release(link_dev, HDAC_EXT_STREAM_TYPE_LINK);
+	snd_soc_dai_set_dma_data(dai, substream, NULL);
 	link_dev->link_prepared = 0;
 
 	/* free the host DMA channel reserved by hostless streams */

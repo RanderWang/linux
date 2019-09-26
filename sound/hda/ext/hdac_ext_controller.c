@@ -278,6 +278,8 @@ int snd_hdac_ext_bus_link_get(struct hdac_bus *bus,
 
 		ret = snd_hdac_ext_bus_link_power_up(link);
 
+		snd_hdac_updatew(link->ml_addr, AZX_REG_ML_LOSIDV, 0xFFFE, 0);
+
 		/*
 		 *  wait for 521usec for codec to report status
 		 *  HDA spec section 4.3 - Codec Discovery

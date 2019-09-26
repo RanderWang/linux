@@ -395,9 +395,11 @@ static struct pci_driver snd_sof_pci_driver = {
 	.id_table = sof_pci_ids,
 	.probe = sof_pci_probe,
 	.remove = sof_pci_remove,
+#ifdef SOF_PM
 	.driver = {
 		.pm = &sof_pci_pm,
 	},
+#endif
 };
 module_pci_driver(snd_sof_pci_driver);
 

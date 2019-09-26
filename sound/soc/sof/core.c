@@ -312,6 +312,7 @@ static int sof_probe_continue(struct snd_sof_dev *sdev)
 	/* set up platform component driver */
 	snd_sof_new_platform_drv(sdev);
 
+#ifdef SOF_TRACE_LOG
 	/* register any debug/trace capabilities */
 	ret = snd_sof_dbg_init(sdev);
 	if (ret < 0) {
@@ -324,6 +325,7 @@ static int sof_probe_continue(struct snd_sof_dev *sdev)
 			ret);
 		goto dbg_err;
 	}
+#endif
 
 	/* init the IPC */
 	sdev->ipc = snd_sof_ipc_init(sdev);

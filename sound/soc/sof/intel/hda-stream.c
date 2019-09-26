@@ -244,8 +244,9 @@ int hda_dsp_stream_trigger(struct snd_sof_dev *sdev,
 					SOF_HDA_SD_CTL_DMA_START |
 					SOF_HDA_CL_DMA_SD_INT_MASK, 0x0);
 
-		snd_sof_dsp_write(sdev, HDA_DSP_HDA_BAR, sd_offset +
+		snd_sof_dsp_update_bits(sdev, HDA_DSP_HDA_BAR, sd_offset +
 				  SOF_HDA_ADSP_REG_CL_SD_STS,
+				  SOF_HDA_CL_DMA_SD_INT_MASK,
 				  SOF_HDA_CL_DMA_SD_INT_MASK);
 
 		hstream->running = false;
@@ -279,11 +280,6 @@ int hda_dsp_stream_hw_params(struct snd_sof_dev *sdev,
 		dev_err(sdev->dev, "error: no stream available\n");
 		return -ENODEV;
 	}
-
-	/* decouple host and link DMA */
-	mask = 0x1 << hstream->index;
-	snd_sof_dsp_update_bits(sdev, HDA_DSP_PP_BAR, SOF_HDA_REG_PP_PPCTL,
-				mask, mask);
 
 	if (!dmab) {
 		dev_err(sdev->dev, "error: no dma buffer allocated!\n");
@@ -333,6 +329,11 @@ int hda_dsp_stream_hw_params(struct snd_sof_dev *sdev,
 
 	if (hstream->posbuf)
 		*hstream->posbuf = 0;
+
+	/* decouple host and link DMA */
+	mask = 0x1 << hstream->index;
+	snd_sof_dsp_update_bits(sdev, HDA_DSP_PP_BAR, SOF_HDA_REG_PP_PPCTL,
+				mask, mask);
 
 	/* reset BDL address */
 	snd_sof_dsp_write(sdev, HDA_DSP_HDA_BAR,

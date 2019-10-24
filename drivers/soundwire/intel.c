@@ -1342,6 +1342,7 @@ static int intel_master_startup(struct sdw_master_device *md)
 
 		pm_runtime_set_active(&md->dev);
 		pm_runtime_enable(&md->dev);
+		pm_request_idle(&md->dev);
 	}
 
 	return 0;

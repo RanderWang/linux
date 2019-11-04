@@ -387,6 +387,13 @@ static void intel_shim_wake(struct sdw_intel *sdw, bool wake_enable)
 	u16 wake_en, wake_sts;
 
 	if (wake_enable) {
+		/* Clear wake status */
+		wake_sts = intel_readw(shim, SDW_SHIM_WAKESTS);
+		wake_sts |= (SDW_SHIM_WAKEEN_ENABLE << link_id);
+		intel_writew(shim, SDW_SHIM_WAKESTS_STATUS, wake_sts);
+
+		msleep(1);
+
 		/* Enable the wakeup */
 		intel_writew(shim, SDW_SHIM_WAKEEN,
 			     (SDW_SHIM_WAKEEN_ENABLE << link_id));
@@ -395,6 +402,7 @@ static void intel_shim_wake(struct sdw_intel *sdw, bool wake_enable)
 		wake_en = intel_readw(shim, SDW_SHIM_WAKEEN);
 		wake_en &= ~(SDW_SHIM_WAKEEN_ENABLE << link_id);
 		intel_writew(shim, SDW_SHIM_WAKEEN, wake_en);
+		msleep(1);
 
 		/* Clear wake status */
 		wake_sts = intel_readw(shim, SDW_SHIM_WAKESTS);
@@ -1427,6 +1435,10 @@ static int _suspend(struct device *dev, bool clock_stop)
 			}
 	}
 
+	if (clock_stop) {
+		sdw_cdns_suspend(cdns);
+	}
+
 	ret = intel_link_power_down(sdw);
 	if (ret) {
 		dev_err(dev, "Link power down failed: %d", ret);
@@ -1479,9 +1491,6 @@ static int _resume(struct device *dev, bool clock_stop)
 			resume = sdw_cdns_check_resume_status(&sdw->cdns);
 			if (resume)
 				return 0; /* it's already running */
-	
-			/* Invoke shim for wake disable */
-			intel_shim_wake(sdw, false);
 	}
 
 	ret = intel_init(sdw, clock_stop);
@@ -1489,6 +1498,13 @@ static int _resume(struct device *dev, bool clock_stop)
 		dev_err(dev, "%s failed: %d", __func__, ret);
 		return ret;
 	}
+
+	if (clock_stop)
+		/* Invoke shim for wake disable */
+		intel_shim_wake(sdw, false);
+	
+	if (!clock_stop)
+		sdw_clear_slave_status(&sdw->cdns.bus); 		/* make sure all Slaves are tagged as UNATTACHED */
 
 	ret = sdw_cdns_enable_interrupt(cdns, true);
 	if (ret < 0) {
@@ -1498,7 +1514,6 @@ static int _resume(struct device *dev, bool clock_stop)
 
 	if (clock_stop) {
 		ret = sdw_bus_exit_clk_stop(&sdw->cdns.bus);
-
 		if (ret < 0)
 			dev_err(dev, "unable to clock stop during resume\n");
 	} else {

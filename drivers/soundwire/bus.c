@@ -776,10 +776,11 @@ static int sdw_slave_clk_stop_prepare(struct sdw_slave *slave,
 {
 	bool wake_en;
 	u32 val = 0;
+	int time = 5;
 	int ret;
 
-	wake_en = slave->prop.wake_capable;
-
+	wake_en = 1;//slave->prop.wake_capable;
+	dev_err(&slave->dev, " clock stop %d, wake up %d", prepare, wake_en);
 	if (prepare) {
 		val = SDW_SCP_SYSTEMCTRL_CLK_STP_PREP;
 
@@ -799,6 +800,18 @@ static int sdw_slave_clk_stop_prepare(struct sdw_slave *slave,
 	if (ret != 0 && ret != -ENODATA)
 		dev_err(&slave->dev,
 			"Clock Stop prepare failed for slave: %d", ret);
+
+	val = sdw_read_no_pm(slave, SDW_SCP_STAT);
+	while (val & 0x1) {
+		msleep(1);
+		val = sdw_read_no_pm(slave, SDW_SCP_STAT);
+		dev_err(&slave->dev, " clock stop wait times %d", time);
+		time --;
+		if (time == 0) {
+			dev_err(&slave->dev, " clock stop failed");
+			break;
+		}
+	}
 
 	return ret;
 }
@@ -1560,6 +1573,7 @@ int sdw_handle_slave_status(struct sdw_bus *bus,
 					i, ret);
 
 			mode = sdw_get_clk_stop_mode(slave);
+			dev_err(bus->dev, "clk stop mode %d", slave->prop.clk_stop_mode1);
 			if (mode == SDW_CLK_STOP_MODE0)
 				break;
 
@@ -1567,7 +1581,6 @@ int sdw_handle_slave_status(struct sdw_bus *bus,
 			if (ret)
 				dev_err(bus->dev,
 					"De-prep Slave %d failed: %d", i, ret);
-
 			break;
 
 		default:

@@ -626,6 +626,7 @@ int hda_dsp_trace_trigger(struct snd_sof_dev *sdev, int cmd);
 
 int hda_sdw_startup(struct snd_sof_dev *sdev);
 void hda_sdw_int_enable(struct snd_sof_dev *sdev, bool enable);
+void hda_sdw_process_wakeen(struct snd_sof_dev *sdev);
 
 #else
 
@@ -651,6 +652,11 @@ static inline int hda_sdw_exit(struct snd_sof_dev *sdev)
 
 static inline void hda_sdw_int_enable(struct snd_sof_dev *sdev, bool enable)
 {
+}
+
+static void hda_sdw_process_wakeen(struct snd_sof_dev *sdev)
+{
+	return false;
 }
 
 static inline bool hda_dsp_check_sdw_irq(struct snd_sof_dev *sdev)

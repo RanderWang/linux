@@ -186,8 +186,26 @@ static int sof_suspend(struct device *dev, bool runtime_suspend)
 
 int snd_sof_runtime_suspend(struct device *dev)
 {
-	dev_err(dev, "%s\n", __func__);
-	return sof_suspend(dev, true);
+	struct snd_sof_dev *sdev = dev_get_drvdata(dev);
+	int ret;
+
+	/* suspend to D0i3 */
+	dev_dbg(sdev->dev, "DSP is trying to enter D0i3...\n");
+	ret = snd_sof_set_d0_substate(sdev, SOF_DSP_D0I3);
+	if (ret == -ENOTSUPP) {
+		/* fallback to D3 suspend */
+		dev_dbg(sdev->dev, "D0i3 not supported, fall back to D3...\n");
+		return 0;
+	} else if (ret < 0) {
+		dev_err(sdev->dev, "error: failed to enter D0I3, %d\n",
+			ret);
+		return ret;
+	}
+
+	sdev->s0_suspend = 1;
+
+	/* platform-specific suspend to D0i3 */
+	return snd_sof_dsp_suspend(sdev);
 }
 EXPORT_SYMBOL(snd_sof_runtime_suspend);
 
@@ -202,8 +220,27 @@ EXPORT_SYMBOL(snd_sof_runtime_idle);
 
 int snd_sof_runtime_resume(struct device *dev)
 {
-	dev_err(dev, "%s\n", __func__);
-	return sof_resume(dev, true);
+	struct snd_sof_dev *sdev = dev_get_drvdata(dev);
+	int ret;
+
+	/* resume from D0I3 */
+	dev_dbg(sdev->dev, "DSP will exit from D0i3...\n");
+	ret = snd_sof_set_d0_substate(sdev, SOF_DSP_D0I0);
+	if (ret == -ENOTSUPP) {
+		/* fallback to resume from D3 */
+		dev_dbg(sdev->dev, "D0i3 not supported, fall back to resume from D3...\n");
+		return 0;
+	} else if (ret < 0) {
+		dev_err(sdev->dev, "error: failed to exit from D0I3 %d\n",
+			ret);
+		return 0;
+	}
+
+	sdev->s0_suspend = 0;
+
+	/* platform-specific resume from D0i3 */
+	ret = snd_sof_dsp_resume(sdev);
+	return 0;
 }
 EXPORT_SYMBOL(snd_sof_runtime_resume);
 

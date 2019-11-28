@@ -231,6 +231,8 @@
 
 #define HDA_DSP_REG_ADSPIS2_SNDW	BIT(5)
 
+#define HDA_DSP_REG_SNDW_WAKE_STS	0x2C192
+
 /* Intel HD Audio Inter-Processor Communication Registers */
 #define HDA_DSP_IPC_BASE		0x40
 #define HDA_DSP_REG_HIPCT		(HDA_DSP_IPC_BASE + 0x00)
@@ -397,6 +399,7 @@ struct sof_intel_dsp_bdl {
 #define SOF_HDA_IRQ_IPC		BIT(0)
 #define SOF_HDA_IRQ_STREAM	BIT(1)
 #define SOF_HDA_IRQ_SDW		BIT(2)
+#define SOF_HDA_IRQ_WAKE	BIT(3)
 
 /* represents DSP HDA controller frontend - i.e. host facing control */
 struct sof_intel_hda_dev {
@@ -626,6 +629,7 @@ int hda_dsp_trace_trigger(struct snd_sof_dev *sdev, int cmd);
 
 int hda_sdw_startup(struct snd_sof_dev *sdev);
 void hda_sdw_int_enable(struct snd_sof_dev *sdev, bool enable);
+void hda_sdw_process_wakeen(struct snd_sof_dev *sdev);
 
 #else
 
@@ -651,6 +655,11 @@ static inline int hda_sdw_exit(struct snd_sof_dev *sdev)
 
 static inline void hda_sdw_int_enable(struct snd_sof_dev *sdev, bool enable)
 {
+}
+
+static void hda_sdw_process_wakeen(struct snd_sof_dev *sdev)
+{
+	return false;
 }
 
 static inline bool hda_dsp_check_sdw_irq(struct snd_sof_dev *sdev)

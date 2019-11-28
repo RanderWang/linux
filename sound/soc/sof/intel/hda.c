@@ -132,6 +132,17 @@ static int hda_sdw_acpi_scan(struct snd_sof_dev *sdev)
 	return 0;
 }
 
+void hda_sdw_process_wakeen(struct snd_sof_dev *sdev)
+{
+	struct sof_intel_hda_dev *hdev;
+
+	hdev = sdev->pdata->hw_pdata;
+	if (!hdev->sdw)
+		return;
+
+	sdw_intel_process_wakeen_event(hdev->sdw);
+}
+
 static int hda_sdw_probe(struct snd_sof_dev *sdev)
 {
 	struct sof_intel_hda_dev *hdev;
@@ -236,6 +247,33 @@ out:
 static irqreturn_t hda_dsp_sdw_thread(int irq, void *context)
 {
 	return sdw_intel_thread(irq, context);
+}
+
+static bool hda_dsp_check_sdw_wake_irq(struct snd_sof_dev *sdev)
+{
+	struct sof_intel_hda_dev *hdev;
+	bool ret = false;
+	u16 wake_sts;
+
+	hdev = sdev->pdata->hw_pdata;
+
+	if (!hdev->sdw)
+		return ret;
+
+	/* The function can be called at irq thread, so use spin_lock_irq */
+	spin_lock_irq(&sdev->hw_lock);
+
+	wake_sts = snd_sof_dsp_read(sdev, HDA_DSP_BAR,
+				    HDA_DSP_REG_SNDW_WAKE_STS);
+
+	/* WAKE message ? */
+	if (wake_sts) {
+		sdev->irq_event |= SOF_HDA_IRQ_WAKE;
+		ret = true;
+	}
+
+	spin_unlock_irq(&sdev->hw_lock);
+	return ret;
 }
 
 #endif
@@ -648,7 +686,8 @@ static irqreturn_t hda_dsp_interrupt_handler(int irq, void *context)
 
 	if (hda_dsp_check_stream_irq(sdev) ||
 	    hda_dsp_check_ipc_irq(sdev)    ||
-	    hda_dsp_check_sdw_irq(sdev)) {
+	    hda_dsp_check_sdw_irq(sdev) ||
+	    hda_dsp_check_sdw_wake_irq(sdev)) {
 
 		/* disable GIE interrupt */
 		snd_sof_dsp_update_bits(sdev, HDA_DSP_HDA_BAR,
@@ -679,6 +718,10 @@ static irqreturn_t hda_dsp_interrupt_thread(int irq, void *context)
 	if (sdev->irq_event & SOF_HDA_IRQ_SDW ||
 	    hda_dsp_check_sdw_irq(sdev))
 		hda_dsp_sdw_thread(irq, hdev->sdw);
+
+	if (sdev->irq_event & SOF_HDA_IRQ_WAKE ||
+	    hda_dsp_check_sdw_wake_irq(sdev))
+		hda_sdw_process_wakeen(sdev);
 
 	/* enable GIE interrupt */
 	snd_sof_dsp_update_bits(sdev, HDA_DSP_HDA_BAR,

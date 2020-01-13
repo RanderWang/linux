@@ -310,48 +310,6 @@ static struct snd_soc_ops rt1308_i2s_ops = {
 	.hw_params = rt1308_i2s_hw_params,
 };
 
-SND_SOC_DAILINK_DEF(sdw0_pin2,
-	DAILINK_COMP_ARRAY(COMP_CPU("SDW0 Pin2")));
-SND_SOC_DAILINK_DEF(sdw0_pin3,
-	DAILINK_COMP_ARRAY(COMP_CPU("SDW0 Pin3")));
-SND_SOC_DAILINK_DEF(sdw0_codec,
-	DAILINK_COMP_ARRAY(COMP_CODEC("sdw:0:25d:711:0", "rt711-aif1")));
-
-SND_SOC_DAILINK_DEF(sdw1_pin2,
-	DAILINK_COMP_ARRAY(COMP_CPU("SDW1 Pin2")));
-SND_SOC_DAILINK_DEF(sdw1_codec,
-	DAILINK_COMP_ARRAY(COMP_CODEC("sdw:1:25d:1308:0", "rt1308-aif")));
-
-SND_SOC_DAILINK_DEF(sdw2_pin2,
-	DAILINK_COMP_ARRAY(COMP_CPU("SDW2 Pin2")));
-SND_SOC_DAILINK_DEF(sdw2_codec,
-	DAILINK_COMP_ARRAY(COMP_CODEC("sdw:2:25d:1308:0", "rt1308-aif")));
-
-SND_SOC_DAILINK_DEF(sdw3_pin2,
-	DAILINK_COMP_ARRAY(COMP_CPU("SDW3 Pin2")));
-SND_SOC_DAILINK_DEF(sdw3_codec,
-	DAILINK_COMP_ARRAY(COMP_CODEC("sdw:3:25d:715:0", "rt715-aif2")));
-
-#if IS_ENABLED(CONFIG_SND_SOC_HDAC_HDMI)
-SND_SOC_DAILINK_DEF(idisp1_pin,
-	DAILINK_COMP_ARRAY(COMP_CPU("iDisp1 Pin")));
-SND_SOC_DAILINK_DEF(idisp1_codec,
-	DAILINK_COMP_ARRAY(COMP_CODEC("ehdaudio0D2", "intel-hdmi-hifi1")));
-
-SND_SOC_DAILINK_DEF(idisp2_pin,
-	DAILINK_COMP_ARRAY(COMP_CPU("iDisp2 Pin")));
-SND_SOC_DAILINK_DEF(idisp2_codec,
-	DAILINK_COMP_ARRAY(COMP_CODEC("ehdaudio0D2", "intel-hdmi-hifi2")));
-
-SND_SOC_DAILINK_DEF(idisp3_pin,
-	DAILINK_COMP_ARRAY(COMP_CPU("iDisp3 Pin")));
-SND_SOC_DAILINK_DEF(idisp3_codec,
-	DAILINK_COMP_ARRAY(COMP_CODEC("ehdaudio0D2", "intel-hdmi-hifi3")));
-#endif
-
-SND_SOC_DAILINK_DEF(platform,
-		DAILINK_COMP_ARRAY(COMP_PLATFORM("0000:00:1f.3")));
-
 static struct snd_soc_codec_conf codec_conf[] = {
 	{
 		.dlc = COMP_CODEC_CONF("sdw:0:25d:711:0"),
@@ -369,7 +327,14 @@ static struct snd_soc_codec_conf codec_conf[] = {
 		.dlc = COMP_CODEC_CONF("sdw:2:25d:1308:0"),
 		.name_prefix = "rt1308-2",
 	},
-
+	{
+		.dlc = COMP_CODEC_CONF("sdw:1:25d:1308:0:0"),
+		.name_prefix = "rt1308-1",
+	},
+	{
+		.dlc = COMP_CODEC_CONF("sdw:1:25d:1308:0:2"),
+		.name_prefix = "rt1308-2",
+	},
 };
 
 static struct snd_soc_dai_link_component rt1308_component[] = {
@@ -401,83 +366,238 @@ struct codec_dai dai_lists[] = {
 	},
 };
 
-struct snd_soc_dai_link dailink[] = {
-	{
-		.name = "SDW0-Playback",
-		.id = 0,
-		.init = headset_init,
-		.no_pcm = 1,
-		.dpcm_playback = 1,
-		.nonatomic = true,
-		SND_SOC_DAILINK_REG(sdw0_pin2, sdw0_codec, platform),
-	},
-	{
-		.name = "SDW0-Capture",
-		.id = 1,
-		.no_pcm = 1,
-		.dpcm_capture = 1,
-		.nonatomic = true,
-		SND_SOC_DAILINK_REG(sdw0_pin3, sdw0_codec, platform),
-	},
-	{
-		.name = "SDW1-Playback",
-		.id = 2,
-		.no_pcm = 1,
-		.dpcm_playback = 1,
-		.nonatomic = true,
-		SND_SOC_DAILINK_REG(sdw1_pin2, sdw1_codec, platform),
-	},
-	{
-		.name = "SDW3-Capture",
-		.id = 4,
-		.no_pcm = 1,
-		.dpcm_capture = 1,
-		.nonatomic = true,
-		SND_SOC_DAILINK_REG(sdw3_pin2, sdw3_codec, platform),
-	},
+static int get_sdw_dai_link_num(struct snd_soc_acpi_mach_params *mach_params)
+{
+	const struct snd_soc_acpi_link_adr *link;
+	int num = 0;
 
-#if IS_ENABLED(CONFIG_SND_SOC_HDAC_HDMI)
-	{
-		.name = "iDisp1",
-		.id = 5,
-		.init = hdmi_init,
-		.no_pcm = 1,
-		.dpcm_playback = 1,
-		SND_SOC_DAILINK_REG(idisp1_pin, idisp1_codec, platform),
-	},
-	{
-		.name = "iDisp2",
-		.id = 6,
-		.init = hdmi_init,
-		.no_pcm = 1,
-		.dpcm_playback = 1,
-		SND_SOC_DAILINK_REG(idisp2_pin, idisp2_codec, platform),
-	},
-	{
-		.name = "iDisp3",
-		.id = 7,
-		.init = hdmi_init,
-		.no_pcm = 1,
-		.dpcm_playback = 1,
-		SND_SOC_DAILINK_REG(idisp3_pin, idisp3_codec, platform),
-	},
-#endif
-	{
-		.name = "SDW2-Playback",
-		.id = 3,
-		.init = second_spk_init,
-		.no_pcm = 1,
-		.dpcm_playback = 1,
-		.nonatomic = true,
-		SND_SOC_DAILINK_REG(sdw2_pin2, sdw2_codec, platform),
-	},
-};
+	link = mach_params->links;
+	while (link->num_adr) {
+		int part_id;
+
+		part_id = (link->adr[0] >> 8) & GENMASK(15, 0);
+		/* playback & capture */
+		if (part_id == 0x711)
+			num ++;
+
+		num ++;
+		link ++;
+	}
+
+	return num;
+}
+
+static void init_dai_link(struct snd_soc_dai_link *dai_links, int id,
+			  char* name,
+			  struct snd_soc_dai_link_component *cpus,
+			  char* cpu_name,
+			  struct snd_soc_dai_link_component *codecs,
+			  int codecs_num)
+{
+	dai_links[id].id = id;
+	dai_links[id].name = name;
+	dai_links[id].platforms = platform_component;
+	dai_links[id].num_platforms = ARRAY_SIZE(platform_component);
+	dai_links[id].nonatomic = true;
+	dai_links[id].no_pcm = 1;
+	dai_links[id].cpus = &cpus[id];
+	dai_links[id].num_cpus = 1;
+	dai_links[id].cpus->dai_name = cpu_name;
+	dai_links[id].codecs = codecs;
+	dai_links[id].num_codecs = codecs_num;
+}
+
+static int generate_sdw_codec_dai(struct device *dev, struct snd_soc_dai_link *dai_links,
+				  struct snd_soc_dai_link_component *cpus, int id,
+				  const struct snd_soc_acpi_link_adr *link)
+{
+	unsigned int part_id, unique_id, mfg_id, link_id;
+	struct snd_soc_dai_link_component *codec;
+	int i, j, dai_num = 1;
+
+	codec = devm_kzalloc(dev, sizeof(struct snd_soc_dai_link_component) *
+			     link->num_adr, GFP_KERNEL);
+	if (!codec)
+		return -ENOMEM;
+
+	link_id = (link->adr[0] >> 48) & GENMASK(15, 0);
+	mfg_id = (link->adr[0] >> 24) & GENMASK(15, 0);
+	part_id = (link->adr[0] >> 8) & GENMASK(15, 0);
+
+	if (link->num_adr < 2) {
+		codec[0].name = devm_kasprintf(dev, GFP_KERNEL,
+				"sdw:%x:%x:%x:%x", link_id, mfg_id, part_id, 0);
+		if (!codec[0].name)
+			return -ENOMEM;
+	} else {
+		for (i = 0; i < link->num_adr; i++) {
+			unique_id = (link->adr[i] >> 40) & GENMASK(3, 0);
+			codec[i].name = devm_kasprintf(dev, GFP_KERNEL,
+				"sdw:%x:%x:%x:%x:%x", link_id, mfg_id, part_id, 0, unique_id);
+			if (!codec[i].name)
+				return -ENOMEM;
+		}
+	}
+
+	for (i = 0; i < ARRAY_SIZE(dai_lists); i++)
+		if (part_id == dai_lists[i].id)
+			break;
+
+	if (i == ARRAY_SIZE(dai_lists))
+		return -EINVAL;
+
+	for (j = 0; j < link->num_adr; j++)
+		codec[j].dai_name = dai_lists[i].name;
+
+	/* playback & capture */
+	if (part_id == 0x711)
+		dai_num ++;
+
+	j = 2;
+	for (i = id; i < dai_num + id; i++) {
+		char *name, *cpu_name;
+
+		if (i == id && part_id != 0x715) {
+			name = devm_kasprintf(dev, GFP_KERNEL,
+				"SDW%d-Playback", link_id);
+			dai_links[i].dpcm_playback = 1;
+		} else {
+			name = devm_kasprintf(dev, GFP_KERNEL,
+				"SDW%d-Capture", link_id);
+			dai_links[i].dpcm_capture = 1;
+		}
+
+		if (!name)
+			return -ENOMEM;
+
+		cpu_name = devm_kasprintf(dev, GFP_KERNEL,
+					  "SDW%d Pin%d", link_id, j++);
+		if (!cpu_name)
+			return -ENOMEM;
+
+		init_dai_link(dai_links, i, name, cpus, cpu_name, codec, link->num_adr);
+	}
+
+	if (part_id == 0x711)
+		dai_links[id].init = headset_init;
+
+	if ((link_id == 0x2 || link->num_adr > 1) && part_id == 0x1308)
+		dai_links[id].init = second_spk_init;
+
+	return dai_num;
+}
+
+static int sof_card_dai_links_create(struct device *dev,
+				     struct snd_soc_acpi_mach *mach,
+				     struct snd_soc_card *card)
+{
+	struct snd_soc_dai_link_component *idisp_components;
+	struct snd_soc_acpi_mach_params *mach_params;
+	int ssp_num = 0, sdw_num, hdmi_num;
+	struct snd_soc_dai_link_component *cpus;
+	struct snd_soc_dai_link *links;
+	const char *board;
+	int num_links;
+	int i, id = 0;
+
+	board = dmi_get_system_info(DMI_BOARD_NAME);
+	if (strstr(board, "TigerLake"))
+		hdmi_num = 4;
+	else
+		hdmi_num = 3;
+
+	if (snd_soc_acpi_find_machine(mach))
+		ssp_num = 1;
+
+	mach_params = &mach->mach_params;
+	sdw_num = get_sdw_dai_link_num(mach_params);
+
+	dev_dbg(dev, "sdw %d, ssp %d, hdmi %d", sdw_num, ssp_num, hdmi_num);
+
+	num_links = ssp_num + sdw_num + hdmi_num;
+	links = devm_kzalloc(dev, sizeof(struct snd_soc_dai_link) *
+			     num_links, GFP_KERNEL);
+	cpus = devm_kzalloc(dev, sizeof(struct snd_soc_dai_link_component) *
+			     num_links, GFP_KERNEL);
+	if (!links || !cpus)
+		goto devm_err;
+
+	/* SDW */
+	if (sdw_num) {
+		const struct snd_soc_acpi_link_adr *link;
+		int val;
+
+		link = mach_params->links;
+		while (link->num_adr) {
+			val = generate_sdw_codec_dai(dev, links, cpus, id, link);
+			if (val < 0) {
+					dev_err(dev, "failed to create dai link %d", id);
+					goto devm_err;
+			}
+
+			id += val;
+			link ++;
+		}
+	}
+
+	/* SSP */
+	if (ssp_num > 0) {
+		init_dai_link(links, id, "SSP2-Codec", cpus, "SSP2 Pin", rt1308_component, 1);
+
+		links[id].dpcm_playback = 1;
+		links[id].ops = &rt1308_i2s_ops,
+
+		id++;
+	}
+
+	/* HDMI */
+	if (hdmi_num > 0) {
+		idisp_components = devm_kzalloc(dev,
+						sizeof(struct snd_soc_dai_link_component) *
+						hdmi_num, GFP_KERNEL);
+		if (!idisp_components)
+			goto devm_err;
+	}
+	for (i = 0; i < hdmi_num; i++) {
+		char *name, *cpu_name;
+
+		name = devm_kasprintf(dev, GFP_KERNEL,
+				      "iDisp%d", i + 1);
+		if (!name)
+			goto devm_err;
+
+		idisp_components[i].name = "ehdaudio0D2";
+		idisp_components[i].dai_name = devm_kasprintf(dev,
+							      GFP_KERNEL,
+							      "intel-hdmi-hifi%d",
+							      i + 1);
+		if (!idisp_components[i].dai_name)
+			goto devm_err;
+
+		cpu_name = devm_kasprintf(dev, GFP_KERNEL,
+					  "iDisp%d Pin", i + 1);
+		if (!cpu_name)
+			goto devm_err;
+
+		init_dai_link(links, id, name, cpus, cpu_name, idisp_components + i, 1);
+
+		links[id].init = hdmi_init;
+		links[id].dpcm_playback = 1;
+
+		id++;
+	}
+
+	card->dai_link = links;
+	card->num_links = num_links;
+
+	return 0;
+devm_err:
+	return -ENOMEM;
+}
 
 /* SoC card */
 static struct snd_soc_card card_rt700_rt1308_rt715 = {
 	.name = "sdw-rt711-1308-715",
-	.dai_link = dailink,
-	.num_links = ARRAY_SIZE(dailink),
 	.controls = controls,
 	.num_controls = ARRAY_SIZE(controls),
 	.dapm_widgets = widgets,
@@ -519,17 +639,16 @@ static int mc_probe(struct platform_device *pdev)
 	if (ret)
 		return ret;
 
+	ret = sof_card_dai_links_create(&pdev->dev, mach,
+					&card_rt700_rt1308_rt715);
+	if (ret < 0)
+		return ret;
+
 	ctx->common_hdmi_codec_drv = mach->mach_params.common_hdmi_codec_drv;
 
 	snd_soc_card_set_drvdata(card, ctx);
 
 	sof_rt711_add_codec_device_props("sdw:0:25d:711:0");
-
-	if (sof_rt711_rt1308_rt715_quirk & SOF_SDW_MONO_SPK) {
-		/* Remove rt1308-2 codec from dailink and codec_conf */
-		card->num_links = ARRAY_SIZE(dailink) - 1;
-		card->num_configs = ARRAY_SIZE(codec_conf) - 1;
-	}
 
 	/* Register the card */
 	ret = devm_snd_soc_register_card(&pdev->dev, card);

@@ -25,6 +25,7 @@
 #include <sound/soc.h>
 #include <sound/soc-acpi.h>
 #include "../../codecs/hdac_hdmi.h"
+#include "../../codecs/rt1308.h"
 #include "hda_dsp_common.h"
 
 /* comment out this define for mono configurations */
@@ -45,6 +46,11 @@ struct mc_private {
 	struct list_head hdmi_pcm_list;
 	bool common_hdmi_codec_drv;
 	struct snd_soc_jack sdw_headset;
+};
+
+struct codec_dai {
+	int id;
+	const char *name;
 };
 
 #if IS_ENABLED(CONFIG_SND_SOC_HDAC_HDMI)
@@ -267,6 +273,43 @@ static int second_spk_init(struct snd_soc_pcm_runtime *rtd)
 	return ret;
 }
 
+static int rt1308_i2s_hw_params(struct snd_pcm_substream *substream,
+				struct snd_pcm_hw_params *params)
+{
+	struct snd_soc_pcm_runtime *rtd = substream->private_data;
+	struct snd_soc_card *card = rtd->card;
+	struct snd_soc_dai *codec_dai = rtd->codec_dai;
+	int clk_id, clk_freq, pll_out;
+	int err;
+
+	clk_id = RT1308_PLL_S_MCLK;
+	clk_freq = 38400000;
+
+	pll_out = params_rate(params) * 512;
+
+	/* Set rt1308 pll */
+	err = snd_soc_dai_set_pll(codec_dai, 0, clk_id, clk_freq, pll_out);
+	if (err < 0) {
+		dev_err(card->dev, "Failed to set RT1308 PLL: %d\n", err);
+		return err;
+	}
+
+	/* Set rt1308 sysclk */
+	err = snd_soc_dai_set_sysclk(codec_dai, RT1308_FS_SYS_S_PLL, pll_out,
+				     SND_SOC_CLOCK_IN);
+	if (err < 0) {
+		dev_err(card->dev, "Failed to set RT1308 SYSCLK: %d\n", err);
+		return err;
+	}
+
+	return 0;
+}
+
+/* machine stream operations */
+static struct snd_soc_ops rt1308_i2s_ops = {
+	.hw_params = rt1308_i2s_hw_params,
+};
+
 SND_SOC_DAILINK_DEF(sdw0_pin2,
 	DAILINK_COMP_ARRAY(COMP_CPU("SDW0 Pin2")));
 SND_SOC_DAILINK_DEF(sdw0_pin3,
@@ -327,6 +370,35 @@ static struct snd_soc_codec_conf codec_conf[] = {
 		.name_prefix = "rt1308-2",
 	},
 
+};
+
+static struct snd_soc_dai_link_component rt1308_component[] = {
+	{
+		.name = "i2c-10EC1308:00",
+		.dai_name = "rt1308-aif",
+	}
+};
+
+static struct snd_soc_dai_link_component platform_component[] = {
+	{
+		/* name might be overridden during probe */
+		.name = "0000:00:1f.3"
+	}
+};
+
+struct codec_dai dai_lists[] = {
+	{
+		.id = 0x711,
+		.name = "rt711-aif1"
+	},
+	{
+		.id = 0x1308,
+		.name = "rt1308-aif"
+	},
+	{
+		.id = 0x715,
+		.name = "rt715-aif2"
+	},
 };
 
 struct snd_soc_dai_link dailink[] = {

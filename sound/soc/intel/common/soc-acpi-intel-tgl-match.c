@@ -47,6 +47,7 @@ static const struct snd_soc_acpi_link_adr tgl_rvp[] = {
 };
 
 struct snd_soc_acpi_mach snd_soc_acpi_intel_tgl_machines[] = {
+#if 0
 	{
 		.id = "10EC1308",
 		.drv_name = "rt711_rt1308",
@@ -55,6 +56,7 @@ struct snd_soc_acpi_mach snd_soc_acpi_intel_tgl_machines[] = {
 		.sof_fw_filename = "sof-tgl.ri",
 		.sof_tplg_filename = "sof-tgl-rt711-rt1308.tplg",
 	},
+#endif
 	{
 		.id = "10EC5682",
 		.drv_name = "tgl_max98357a_rt5682",
@@ -69,13 +71,22 @@ EXPORT_SYMBOL_GPL(snd_soc_acpi_intel_tgl_machines);
 
 /* this table is used when there is no I2S codec present */
 struct snd_soc_acpi_mach snd_soc_acpi_intel_tgl_sdw_machines[] = {
-	{
-		.link_mask = 0x3, /* rt711 on link 0 and 2 rt1308s on link 1 */
-		.links = tgl_rvp,
-		.drv_name = "sdw_rt711_rt1308_rt715",
+        {
+		.link_mask = 0x1,
+		.links = tgl_i2s_rt1308,
+		.drv_name = "sdw_rt700",
 		.sof_fw_filename = "sof-tgl.ri",
-		.sof_tplg_filename = "sof-tgl-rt711-rt1308.tplg",
+		.sof_tplg_filename = "sof-tgl-rt711.tplg",
 	},
+#if 0
+        {
+                .link_mask = 0x3, /* rt711 on link 0 and 2 rt1308s on link 1 */
+                .links = tgl_rvp,
+                .drv_name = "sdw_rt711_rt1308_rt715",
+                .sof_fw_filename = "sof-tgl.ri",
+                .sof_tplg_filename = "sof-tgl-rt711-rt1308.tplg",
+	},
+#endif
 	{},
 };
 EXPORT_SYMBOL_GPL(snd_soc_acpi_intel_tgl_sdw_machines);

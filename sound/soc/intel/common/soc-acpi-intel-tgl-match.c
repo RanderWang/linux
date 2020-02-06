@@ -74,7 +74,7 @@ struct snd_soc_acpi_mach snd_soc_acpi_intel_tgl_sdw_machines[] = {
         {
 		.link_mask = 0x1,
 		.links = tgl_i2s_rt1308,
-		.drv_name = "sdw_rt700",
+		.drv_name = "sdw_rt711",
 		.sof_fw_filename = "sof-tgl.ri",
 		.sof_tplg_filename = "sof-tgl-rt711.tplg",
 	},

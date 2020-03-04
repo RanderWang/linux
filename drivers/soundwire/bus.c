@@ -601,6 +601,24 @@ void sdw_extract_slave_id(struct sdw_bus *bus,
 	id->part_id = SDW_PART_ID(addr);
 	id->class_id = SDW_CLASS_ID(addr);
 
+	if (SDW_DISCO_LINK_ID(addr) == 0 && id->part_id == 0x701) {
+		id->unique_id = 1;
+		id->part_id = 0x711;
+		id->sdw_version = 2;
+	}
+
+	if (SDW_DISCO_LINK_ID(addr) == 1) {
+		if (id->part_id == 0x700) {
+			id->unique_id = 0;
+			id->part_id = 0x1308;
+			id->sdw_version = 2;
+		} else if (id->part_id == 0x701) {
+			id->unique_id = 2;
+			id->part_id = 0x1308;
+			id->sdw_version = 2;
+		}
+	}
+
 	dev_dbg(bus->dev,
 		"SDW Slave class_id %x, part_id %x, mfg_id %x, unique_id %x, version %x\n",
 				id->class_id, id->part_id, id->mfg_id,

@@ -2852,11 +2852,14 @@ static int rt5682_probe(struct snd_soc_component *component)
 	unsigned long time;
 
 #ifdef CONFIG_COMMON_CLK
+#if !IS_ENABLED(CONFIG_SND_SOC_RT5682_SDW)
 	int ret;
+#endif
 #endif
 	rt5682->component = component;
 
 #ifdef CONFIG_COMMON_CLK
+#if !IS_ENABLED(CONFIG_SND_SOC_RT5682_SDW)
 	/* Check if MCLK provided */
 	rt5682->mclk = devm_clk_get(component->dev, "mclk");
 	if (IS_ERR(rt5682->mclk)) {
@@ -2874,6 +2877,7 @@ static int rt5682_probe(struct snd_soc_component *component)
 
 	/* Initial setup for CCF */
 	rt5682->lrck[RT5682_AIF1] = CLK_48;
+#endif
 #endif
 
 	if (rt5682->is_sdw) {
@@ -2895,12 +2899,14 @@ static void rt5682_remove(struct snd_soc_component *component)
 	struct rt5682_priv *rt5682 = snd_soc_component_get_drvdata(component);
 
 #ifdef CONFIG_COMMON_CLK
+#if !IS_ENABLED(CONFIG_SND_SOC_RT5682_SDW)
 	int i;
 
 	for (i = RT5682_DAI_NUM_CLKS - 1; i >= 0; --i) {
 		if (rt5682->dai_clks_lookup[i])
 			clkdev_drop(rt5682->dai_clks_lookup[i]);
 	}
+#endif
 #endif
 
 	rt5682_reset(rt5682);

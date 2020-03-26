@@ -131,7 +131,7 @@ sdw_intel_scan_controller(struct sdw_intel_acpi_info *info)
 	dev_dbg(&adev->dev, "ACPI reports %d SDW Link devices\n", count);
 
 	info->count = count;
-
+#if 0
 	for (i = 0; i < count; i++) {
 		if (ctrl_link_mask && !(ctrl_link_mask & BIT(i))) {
 			dev_dbg(&adev->dev,
@@ -147,7 +147,8 @@ sdw_intel_scan_controller(struct sdw_intel_acpi_info *info)
 
 		info->link_mask |= BIT(i);
 	}
-
+#endif
+	info->link_mask = 1;
 	return 0;
 }
 

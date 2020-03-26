@@ -1313,8 +1313,8 @@ static int sdw_master_read_intel_prop(struct sdw_bus *bus)
 				 "intel-quirk-mask",
 				 &quirk_mask);
 
-	if (quirk_mask & SDW_INTEL_QUIRK_MASK_BUS_DISABLE)
-		prop->hw_disabled = true;
+	//if (quirk_mask & SDW_INTEL_QUIRK_MASK_BUS_DISABLE)
+	//	prop->hw_disabled = true;
 
 	return 0;
 }
